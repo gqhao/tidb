@@ -265,6 +265,7 @@ const (
 	If     = "if"
 	Ifnull = "ifnull"
 	Nullif = "nullif"
+	Nvl    = "nvl"
 
 	// miscellaneous functions
 	AnyValue        = "any_value"

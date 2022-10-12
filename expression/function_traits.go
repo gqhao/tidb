@@ -65,6 +65,7 @@ var DisableFoldFunctions = map[string]struct{}{
 var TryFoldFunctions = map[string]struct{}{
 	ast.If:       {},
 	ast.Ifnull:   {},
+	ast.Nvl:      {},
 	ast.Case:     {},
 	ast.LogicAnd: {},
 	ast.LogicOr:  {},
