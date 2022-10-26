@@ -1214,6 +1214,51 @@ func (b *builtinUUIDSig) evalString(_ chunk.Row) (d string, isNull bool, err err
 	return
 }
 
+// added by gqhao for sys_guid function
+
+type SysGuidFunctionClass struct {
+	baseFunctionClass
+}
+
+func (c *SysGuidFunctionClass) getFunction(ctx sessionctx.Context, args []Expression) (builtinFunc, error) {
+	if err := c.verifyArgs(args); err != nil {
+		return nil, err
+	}
+	bf, err := newBaseBuiltinFuncWithTp(ctx, c.funcName, args, types.ETString)
+	if err != nil {
+		return nil, err
+	}
+	charset, collate := ctx.GetSessionVars().GetCharsetInfo()
+	bf.tp.SetCharset(charset)
+	bf.tp.SetCollate(collate)
+	bf.tp.SetFlen(32)
+	sig := &builtinSYSGUIDSig{bf}
+	sig.setPbCode(tipb.ScalarFuncSig_UUID)
+	return sig, nil
+}
+
+type builtinSYSGUIDSig struct {
+	baseBuiltinFunc
+}
+
+func (b *builtinSYSGUIDSig) Clone() builtinFunc {
+	newSig := &builtinSYSGUIDSig{}
+	newSig.cloneFrom(&b.baseBuiltinFunc)
+	return newSig
+}
+
+// evalString evals a builtinsysguid.
+// See https://dev.mysql.com/doc/refman/5.7/en/miscellaneous-functions.html#function_uuid
+func (b *builtinSYSGUIDSig) evalString(_ chunk.Row) (d string, isNull bool, err error) {
+	var id uuid.UUID
+	id, err = uuid.NewUUID()
+	if err != nil {
+		return
+	}
+	d = strings.ToUpper(strings.Replace(id.String(), "-", "", 4))
+	return
+}
+
 type uuidShortFunctionClass struct {
 	baseFunctionClass
 }

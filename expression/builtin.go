@@ -717,7 +717,7 @@ var funcs = map[string]functionClass{
 	// control functions
 	ast.If:     &ifFunctionClass{baseFunctionClass{ast.If, 3, 3}},
 	ast.Ifnull: &ifNullFunctionClass{baseFunctionClass{ast.Ifnull, 2, 2}},
-	ast.Nvl: &ifNullFunctionClass{baseFunctionClass{ast.Ifnull, 2, 2}},
+	ast.Nvl:    &ifNullFunctionClass{baseFunctionClass{ast.Ifnull, 2, 2}},
 	// miscellaneous functions
 	ast.Sleep:           &sleepFunctionClass{baseFunctionClass{ast.Sleep, 1, 1}},
 	ast.AnyValue:        &anyValueFunctionClass{baseFunctionClass{ast.AnyValue, 1, 1}},
@@ -737,6 +737,7 @@ var funcs = map[string]functionClass{
 	ast.NameConst:       &nameConstFunctionClass{baseFunctionClass{ast.NameConst, 2, 2}},
 	ast.ReleaseAllLocks: &releaseAllLocksFunctionClass{baseFunctionClass{ast.ReleaseAllLocks, 0, 0}},
 	ast.UUID:            &uuidFunctionClass{baseFunctionClass{ast.UUID, 0, 0}},
+	ast.Sys_Guid:        &SysGuidFunctionClass{baseFunctionClass{ast.Sys_Guid, 0, 0}},
 	ast.UUIDShort:       &uuidShortFunctionClass{baseFunctionClass{ast.UUIDShort, 0, 0}},
 	ast.VitessHash:      &vitessHashFunctionClass{baseFunctionClass{ast.VitessHash, 1, 1}},
 	ast.UUIDToBin:       &uuidToBinFunctionClass{baseFunctionClass{ast.UUIDToBin, 1, 2}},
