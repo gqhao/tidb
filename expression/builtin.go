@@ -563,6 +563,7 @@ var funcs = map[string]functionClass{
 	ast.Radians:  &radiansFunctionClass{baseFunctionClass{ast.Radians, 1, 1}},
 	ast.Rand:     &randFunctionClass{baseFunctionClass{ast.Rand, 0, 1}},
 	ast.Round:    &roundFunctionClass{baseFunctionClass{ast.Round, 1, 2}},
+	ast.Trunc:    &truncFunctionClass{baseFunctionClass{ast.Trunc, 1, 2}},
 	ast.Sign:     &signFunctionClass{baseFunctionClass{ast.Sign, 1, 1}},
 	ast.Sin:      &sinFunctionClass{baseFunctionClass{ast.Sin, 1, 1}},
 	ast.Sqrt:     &sqrtFunctionClass{baseFunctionClass{ast.Sqrt, 1, 1}},

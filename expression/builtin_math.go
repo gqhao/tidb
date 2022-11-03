@@ -37,6 +37,7 @@ import (
 var (
 	_ functionClass = &absFunctionClass{}
 	_ functionClass = &roundFunctionClass{}
+	_ functionClass = &truncFunctionClass{}
 	_ functionClass = &ceilFunctionClass{}
 	_ functionClass = &floorFunctionClass{}
 	_ functionClass = &logFunctionClass{}
@@ -254,6 +255,74 @@ func (b *builtinAbsDecSig) evalDecimal(row chunk.Row) (*types.MyDecimal, bool, e
 }
 
 func (c *roundFunctionClass) getFunction(ctx sessionctx.Context, args []Expression) (builtinFunc, error) {
+	if err := c.verifyArgs(args); err != nil {
+		return nil, c.verifyArgs(args)
+	}
+	argTp := args[0].GetType().EvalType()
+	if argTp != types.ETInt && argTp != types.ETDecimal {
+		argTp = types.ETReal
+	}
+	argTps := []types.EvalType{argTp}
+	if len(args) > 1 {
+		argTps = append(argTps, types.ETInt)
+	}
+	bf, err := newBaseBuiltinFuncWithTp(ctx, c.funcName, args, argTp, argTps...)
+	if err != nil {
+		return nil, err
+	}
+	argFieldTp := args[0].GetType()
+	if mysql.HasUnsignedFlag(argFieldTp.GetFlag()) {
+		bf.tp.AddFlag(mysql.UnsignedFlag)
+	}
+
+	// ETInt or ETReal is set correctly by newBaseBuiltinFuncWithTp, only need to handle ETDecimal.
+	if argTp == types.ETDecimal {
+		bf.tp.SetFlen(argFieldTp.GetFlen())
+		bf.tp.SetDecimal(calculateDecimal4RoundAndTruncate(ctx, args, argTp))
+		if bf.tp.GetDecimal() != types.UnspecifiedLength {
+			if argFieldTp.GetDecimal() != types.UnspecifiedLength {
+				decimalDelta := bf.tp.GetDecimal() - argFieldTp.GetDecimal()
+				bf.tp.SetFlen(bf.tp.GetFlen() + mathutil.Max(decimalDelta, 0))
+			} else {
+				bf.tp.SetFlen(argFieldTp.GetFlen() + bf.tp.GetDecimal())
+			}
+		}
+	}
+
+	var sig builtinFunc
+	if len(args) > 1 {
+		switch argTp {
+		case types.ETInt:
+			sig = &builtinRoundWithFracIntSig{bf}
+			sig.setPbCode(tipb.ScalarFuncSig_RoundWithFracInt)
+		case types.ETDecimal:
+			sig = &builtinRoundWithFracDecSig{bf}
+			sig.setPbCode(tipb.ScalarFuncSig_RoundWithFracDec)
+		case types.ETReal:
+			sig = &builtinRoundWithFracRealSig{bf}
+			sig.setPbCode(tipb.ScalarFuncSig_RoundWithFracReal)
+		default:
+			panic("unexpected argTp")
+		}
+	} else {
+		switch argTp {
+		case types.ETInt:
+			sig = &builtinRoundIntSig{bf}
+			sig.setPbCode(tipb.ScalarFuncSig_RoundInt)
+		case types.ETDecimal:
+			sig = &builtinRoundDecSig{bf}
+			sig.setPbCode(tipb.ScalarFuncSig_RoundDec)
+		case types.ETReal:
+			sig = &builtinRoundRealSig{bf}
+			sig.setPbCode(tipb.ScalarFuncSig_RoundReal)
+		default:
+			panic("unexpected argTp")
+		}
+	}
+	return sig, nil
+}
+
+func (c *truncFunctionClass) getFunction(ctx sessionctx.Context, args []Expression) (builtinFunc, error) {
 	if err := c.verifyArgs(args); err != nil {
 		return nil, c.verifyArgs(args)
 	}
@@ -1144,6 +1213,10 @@ func (b *builtinPowSig) evalReal(row chunk.Row) (float64, bool, error) {
 }
 
 type roundFunctionClass struct {
+	baseFunctionClass
+}
+
+type truncFunctionClass struct {
 	baseFunctionClass
 }
 

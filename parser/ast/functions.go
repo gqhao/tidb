@@ -106,6 +106,7 @@ const (
 	Radians  = "radians"
 	Rand     = "rand"
 	Round    = "round"
+	Trunc    = "trunc"
 	Sign     = "sign"
 	Sin      = "sin"
 	Sqrt     = "sqrt"
