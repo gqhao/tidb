@@ -327,8 +327,8 @@ func (c *truncFunctionClass) getFunction(ctx sessionctx.Context, args []Expressi
 		return nil, c.verifyArgs(args)
 	}
 	argTp := args[0].GetType().EvalType()
-	if argTp != types.ETInt && argTp != types.ETDecimal {
-		argTp = types.ETReal
+	if argTp != types.ETInt && argTp != types.ETDecimal && argTp != types.ETReal {
+		argTp = types.ETString
 	}
 	argTps := []types.EvalType{argTp}
 	if len(args) > 1 {
@@ -369,6 +369,9 @@ func (c *truncFunctionClass) getFunction(ctx sessionctx.Context, args []Expressi
 		case types.ETReal:
 			sig = &builtinRoundWithFracRealSig{bf}
 			sig.setPbCode(tipb.ScalarFuncSig_RoundWithFracReal)
+		case types.ETString:
+			sig = &builtiTtruncWithFracStringSig{bf}
+		//	sig.setPbCode(tipb.ScalarFuncSig_TruncWithFracString)
 		default:
 			panic("unexpected argTp")
 		}
@@ -383,6 +386,9 @@ func (c *truncFunctionClass) getFunction(ctx sessionctx.Context, args []Expressi
 		case types.ETReal:
 			sig = &builtinRoundRealSig{bf}
 			sig.setPbCode(tipb.ScalarFuncSig_RoundReal)
+		case types.ETString:
+			sig = &builtinTruncStringSig{bf}
+			//sig.setPbCode(tipb.ScalarFuncSig_TruncString)
 		default:
 			panic("unexpected argTp")
 		}
@@ -427,6 +433,27 @@ func (b *builtinRoundRealSig) evalReal(row chunk.Row) (float64, bool, error) {
 		return 0, isNull, err
 	}
 	return types.Round(val, 0), false, nil
+}
+
+type builtinTruncStringSig struct {
+	baseBuiltinFunc
+}
+
+func (b *builtinTruncStringSig) Clone() builtinFunc {
+	newSig := &builtinTruncStringSig{}
+	newSig.cloneFrom(&b.baseBuiltinFunc)
+	return newSig
+}
+
+// evalReal evals ROUND(value).
+// See https://dev.mysql.com/doc/refman/5.7/en/mathematical-functions.html#function_round
+func (b *builtinTruncStringSig) evalString(row chunk.Row) (string, bool, error) {
+	val, isNull, err := b.args[0].EvalString(b.ctx, row)
+	if isNull || err != nil {
+		return "error", isNull, err
+	}
+	print(val)
+	return "TruncStringSig function called", false, nil
 }
 
 type builtinRoundIntSig struct {
@@ -491,6 +518,31 @@ func (b *builtinRoundWithFracRealSig) evalReal(row chunk.Row) (float64, bool, er
 		return 0, isNull, err
 	}
 	return types.Round(val, int(frac)), false, nil
+}
+
+type builtiTtruncWithFracStringSig struct {
+	baseBuiltinFunc
+}
+
+func (b *builtiTtruncWithFracStringSig) Clone() builtinFunc {
+	newSig := &builtiTtruncWithFracStringSig{}
+	newSig.cloneFrom(&b.baseBuiltinFunc)
+	return newSig
+}
+
+// evalString evals trunc(value, frac).
+// See https://dev.mysql.com/doc/refman/5.7/en/mathematical-functions.html#function_round
+func (b *builtiTtruncWithFracStringSig) evalString(row chunk.Row) (string, bool, error) {
+	val, isNull, err := b.args[0].EvalString(b.ctx, row)
+	if isNull || err != nil {
+		return "error", isNull, err
+	}
+	frac, isNull, err := b.args[1].EvalString(b.ctx, row)
+	if isNull || err != nil {
+		return "error", isNull, err
+	}
+	print(val, frac)
+	return "trunc with frac string functions called", false, nil
 }
 
 type builtinRoundWithFracIntSig struct {
